@@ -13,7 +13,7 @@ settings.json		Stores the current operational state and configuration (e.g., cur
 data_collector.py	A wrapper script that calls sensor_reading.py and outputs the resulting sensor data as a JSON string to standard output (used for inter-process communication).
 sensor_reading.py	Hardware Interaction. Handles initialization of the I2C bus, the TCA9548A multiplexer, and the HDC302x sensor to read the current temperature and humidity.
 
-rerequisites & Setup
+Prerequisites & Setup
 1. Hardware Requirements
 
     Raspberry Pi: Raspberry Pi Zero 2 W (or any other Raspberry Pi model).
@@ -43,6 +43,16 @@ Bash
 
     Navigate to 3 Interface Options → I5 I2C → Yes.
 
+Configuring the files for your RPi.
+
+    Update this setting within settings.json to the name of you raspberry pi
+    "project_path": "/home/your_username/Thermostat"
+
+    Update the systemd service file (thermostat.service) to the name of you raspberry pi as well.
+    # IMPORTANT: Change 'YOUR_USERNAME' to your actual Raspberry Pi username if different
+    User=YOUR_USERNAME
+    # IMPORTANT: Change this to the absolute path of your project directory
+    WorkingDirectory=/home/YOUR_USERNAME/Thermostat 
 
 Running the Thermostat
 
