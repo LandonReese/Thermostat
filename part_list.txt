@@ -1,0 +1,18 @@
+Hardware
+Raspberry Pi Zero 2 W
+SparkFun Qwiic HAT for Raspberry Pi
+https://www.sparkfun.com/sparkfun-qwiic-hat-for-raspberry-pi.html
+
+Sensors & Data
+Adafruit HDC3022 Precision Temperature & Humidity Sensor
+https://www.adafruit.com/product/5989
+Adafruit TCA9548A 1-to-8 I2C Multiplexer Breakout
+https://www.adafruit.com/product/2717
+
+HVAC Interface & Power
+3-Channel Relay Board for Raspberry Pi (5A/250VAC rated)
+https://www.robotshop.com/products/3-channel-raspberry-relay-board
+24VAC to 5VDC Power Converter (High Voltage DC-DC Step-Down Buck Converter)
+*To handle rectified 24VAC (which peaks at ~34VDC), a converter rated for >40V input is required.*
+6-Position Screw Terminal Block (e.g., for R, C, W, Y, G, Fan/Aux)
+*A simple terminal block for connecting standard HVAC wires.*
