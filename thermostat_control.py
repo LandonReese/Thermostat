@@ -6,8 +6,8 @@ import time
 import pytz 
 
 # --- Configuration ---
-SETTINGS_FILE = 'settings.json'
-DATA_COLLECTOR_SCRIPT = './data_collector.py' # Relative path to the collector script
+SETTINGS_FILE = '/home/landon/Thermostat/settings.json'
+DATA_COLLECTOR_SCRIPT = '/home/landon/Thermostat/data_collector.py' # Relative path to the collector script
 
 # --- Helper Functions ---
 
@@ -140,7 +140,7 @@ def run_thermostat_cycle():
     target_f = schedule_setting['target_f']
     mode = schedule_setting['mode']
     
-    print(f"- Timezone: {timezone}")
+    # print(f"- Timezone: {timezone}")
     print(f"- Schedule Target: {target_f:.1f}°F, Mode: {mode}")
     
     # 2. READ SENSORS
@@ -167,7 +167,7 @@ def run_thermostat_cycle():
         elif current_temp >= target_f:
             action = "HEAT_OFF"
             
-        print(f"- Heat ON threshold: < {heat_on_temp:.1f}°F")
+        # print(f"- Heat ON threshold: < {heat_on_temp:.1f}°F")
         
     elif mode == 'COOL':
         # Cool ON if current temp is above target plus hysteresis
@@ -178,7 +178,7 @@ def run_thermostat_cycle():
         elif current_temp <= target_f:
             action = "COOL_OFF"
             
-        print(f"- Cool ON threshold: > {cool_on_temp:.1f}°F")
+        # print(f"- Cool ON threshold: > {cool_on_temp:.1f}°F")
             
     elif mode == 'FAN':
         action = "FAN_ON" 
@@ -202,5 +202,5 @@ if __name__ == "__main__":
     # To run continuously every 5 seconds
     while True:
         run_thermostat_cycle()
-        print(f"Waiting 5 seconds before next cycle...")
+        # print(f"Waiting 5 seconds before next cycle...")
         time.sleep(30)
