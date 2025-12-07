@@ -1,7 +1,7 @@
 Hardware
 Raspberry Pi Zero 2 W
-SparkFun Qwiic HAT for Raspberry Pi
-https://www.sparkfun.com/sparkfun-qwiic-hat-for-raspberry-pi.html
+SparkFun Qwiic SHIM for Raspberry Pi
+https://www.sparkfun.com/sparkfun-qwiic-shim-for-raspberry-pi.html
 
 Sensors & Data
 Adafruit HDC3022 Precision Temperature & Humidity Sensor
