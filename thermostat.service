@@ -1,0 +1,25 @@
+[Unit]
+Description=Raspberry Pi Thermostat Control Service
+After=network.target
+
+[Service]
+# IMPORTANT: Change 'landon' to your actual Raspberry Pi username if different
+User=landon
+# IMPORTANT: Change this to the absolute path of your project directory
+WorkingDirectory=/home/landon/Thermostat 
+
+# Type of service: simple means the script runs directly
+Type=simple
+
+# The command to execute: python3 followed by the script name
+# Ensure this is the absolute path to python3
+ExecStart=/usr/bin/python3 thermostat_control.py
+
+# Restart the service if it stops for any reason
+Restart=always
+# Wait for 5 seconds before attempting to restart
+RestartSec=5
+
+[Install]
+# Start the service automatically when the system boots up
+WantedBy=multi-user.target
