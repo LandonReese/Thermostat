@@ -29,13 +29,12 @@ rerequisites & Setup
 This project requires specific Python libraries, particularly for I2C communication and timezone handling.
 
     Install Required Libraries:
-    Bash
-
-# Ensure pip is up to date
-sudo pip3 install --break-system-packages --upgrade pip
-
-# Install Adafruit Blinka (the CircuitPython compatibility layer), Specific CircuitPython libraries for I2C, timezone handling library
-sudo pip3 install --break-system-packages adafruit-blinka adafruit-circuitpython-tca9548a adafruit-circuitpython-hdc302x pytz
+    
+    # Ensure pip is up to date
+    sudo pip3 install --break-system-packages --upgrade pip
+    
+    Install Adafruit Blinka (the CircuitPython compatibility layer), Specific CircuitPython libraries for I2C, timezone handling library
+    sudo pip3 install --break-system-packages adafruit-blinka adafruit-circuitpython-tca9548a adafruit-circuitpython-hdc302x pytz
 
 Enable I2C: Ensure the I2C interface is enabled on your Raspberry Pi.
 Bash
