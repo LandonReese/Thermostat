@@ -1,4 +1,4 @@
-aspberry Pi Zero W Smart Thermostat Project
+Raspberry Pi Zero W Smart Thermostat Project
 
 This project implements a fully customizable, schedule-driven thermostat system using a Raspberry Pi Zero 2 W. It reads temperature and humidity data from an I2C sensor (via an I2C multiplexer), applies control logic based on a defined schedule and hysteresis, and determines the required action (e.g., HEAT_ON, COOL_OFF).
 Project Goal
@@ -32,16 +32,10 @@ This project requires specific Python libraries, particularly for I2C communicat
     Bash
 
 # Ensure pip is up to date
-sudo pip3 install --upgrade pip
+sudo pip3 install --break-system-packages --upgrade pip
 
-# Install Adafruit Blinka (the CircuitPython compatibility layer)
-sudo pip3 install adafruit-blinka
-
-# Install specific CircuitPython libraries for I2C
-sudo pip3 install adafruit-circuitpython-tca9548a adafruit-circuitpython-hdc302x
-
-# Install timezone handling library
-sudo pip3 install pytz
+# Install Adafruit Blinka (the CircuitPython compatibility layer), Specific CircuitPython libraries for I2C, timezone handling library
+sudo pip3 install --break-system-packages adafruit-blinka adafruit-circuitpython-tca9548a adafruit-circuitpython-hdc302x pytz
 
 Enable I2C: Ensure the I2C interface is enabled on your Raspberry Pi.
 Bash
@@ -104,3 +98,17 @@ JSON
     "timezone": "America/Chicago",
     "last_check_time": "2025-12-02T06:47:20.535415"
 }
+
+## System Service & Automation
+
+To ensure the thermostat runs continuously and restarts automatically if the Raspberry Pi reboots or the script crashes, we use a **systemd service**. The service file is included in this repository (`thermostat.service`).
+
+### 1. Symlink the Service File
+
+Instead of copying the file, create a symbolic link from this repository to the systemd directory. This allows you to update the service configuration by simply editing the file in this folder.
+
+**Note:** Ensure the paths inside `thermostat.service` (specifically `WorkingDirectory` and `ExecStart`) match your actual installation path before linking.
+
+# Link the file to /etc/systemd/system/
+# Syntax: sudo ln -s [ABSOLUTE_PATH_TO_REPO_FILE] [DESTINATION]
+sudo ln -s /home/landon/Thermostat/thermostat.service /etc/systemd/system/thermostat.service
