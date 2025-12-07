@@ -3,7 +3,7 @@ Description=Raspberry Pi Thermostat Control Service
 After=network.target
 
 [Service]
-# IMPORTANT: Change 'pi' to your actual Raspberry Pi username if different
+# IMPORTANT: Change 'landon' to your actual Raspberry Pi username if different
 User=landon
 # IMPORTANT: Change this to the absolute path of your project directory
 WorkingDirectory=/home/landon/Thermostat 
