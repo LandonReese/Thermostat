@@ -28,13 +28,29 @@ Prerequisites & Setup
 
 This project requires specific Python libraries, particularly for I2C communication and timezone handling.
 
-    Install Required Libraries:
+**Option A: Using a Virtual Environment (Recommended)**
+
+    # Navigate to your project directory
+    cd /path/to/Thermostat
     
+    # Create a virtual environment
+    python3 -m venv venv
+    
+    # Activate the virtual environment
+    source venv/bin/activate
+    
+    # Install required libraries from requirements.txt
+    pip install -r requirements.txt
+
+**Option B: System-wide Installation**
+
     # Ensure pip is up to date
     sudo pip3 install --break-system-packages --upgrade pip
     
-    Install Adafruit Blinka (the CircuitPython compatibility layer), Specific CircuitPython libraries for I2C, timezone handling library
+    # Install required libraries
     sudo pip3 install --break-system-packages adafruit-blinka adafruit-circuitpython-tca9548a adafruit-circuitpython-hdc302x pytz
+
+**Note:** The systemd service will automatically use the virtual environment if it exists in the project directory. If no venv is found, it will use the system python3.
 
 Enable I2C: Ensure the I2C interface is enabled on your Raspberry Pi.
 Bash
@@ -43,16 +59,22 @@ Bash
 
     Navigate to 3 Interface Options → I5 I2C → Yes.
 
-Configuring the files for your RPi.
+3. Configuring the files for your RPi
 
-    Update this setting within settings.json to the name of you raspberry pi
-    "project_path": "/home/your_username/Thermostat"
+After cloning the repository, you need to update a few paths:
 
-    Update the systemd service file (thermostat.service) to the name of you raspberry pi as well.
-    # IMPORTANT: Change 'YOUR_USERNAME' to your actual Raspberry Pi username if different
-    User=YOUR_USERNAME
-    # IMPORTANT: Change this to the absolute path of your project directory
-    WorkingDirectory=/home/YOUR_USERNAME/Thermostat 
+    a. Update settings.json:
+       Edit the "project_path" setting to match your installation path:
+       "project_path": "/home/your_username/Thermostat"
+
+    b. Update thermostat.service:
+       Edit the following lines in thermostat.service:
+       - User=your_username (change 'landon' to your actual username)
+       - WorkingDirectory=/home/your_username/Thermostat (update the path)
+       - ExecStart=/home/your_username/Thermostat/start_thermostat.sh (update the path)
+
+    c. Make the startup script executable:
+       chmod +x start_thermostat.sh 
 
 Running the Thermostat
 
@@ -112,12 +134,29 @@ JSON
 
 To ensure the thermostat runs continuously and restarts automatically if the Raspberry Pi reboots or the script crashes, we use a **systemd service**. The service file is included in this repository (`thermostat.service`).
 
-### 1. Symlink the Service File
+### 1. Setup and Symlink the Service File
 
-Instead of copying the file, create a symbolic link from this repository to the systemd directory. This allows you to update the service configuration by simply editing the file in this folder.
+**Important:** Before linking the service file, ensure you have:
+1. Updated the paths in `thermostat.service` (User, WorkingDirectory, ExecStart)
+2. Made `start_thermostat.sh` executable: `chmod +x start_thermostat.sh`
+3. (Optional) Created and activated a virtual environment with dependencies installed
 
-**Note:** Ensure the paths inside `thermostat.service` (specifically `WorkingDirectory` and `ExecStart`) match your actual installation path before linking.
+Create a symbolic link from this repository to the systemd directory. This allows you to update the service configuration by simply editing the file in this folder.
 
-# Link the file to /etc/systemd/system/
-# Syntax: sudo ln -s [ABSOLUTE_PATH_TO_REPO_FILE] [DESTINATION]
-sudo ln -s /home/landon/Thermostat/thermostat.service /etc/systemd/system/thermostat.service
+    # Link the file to /etc/systemd/system/
+    # Syntax: sudo ln -s [ABSOLUTE_PATH_TO_REPO_FILE] [DESTINATION]
+    sudo ln -s /home/your_username/Thermostat/thermostat.service /etc/systemd/system/thermostat.service
+    
+    # Reload systemd to recognize the new service
+    sudo systemctl daemon-reload
+    
+    # Enable the service to start on boot
+    sudo systemctl enable thermostat.service
+    
+    # Start the service
+    sudo systemctl start thermostat.service
+    
+    # Check the status
+    sudo systemctl status thermostat.service
+
+**How it works:** The `start_thermostat.sh` wrapper script automatically detects if a virtual environment exists in the project directory. If `venv/bin/python3` is found, it uses that. Otherwise, it falls back to the system `python3`. This means you can use the project with or without a virtual environment - just update the paths in `thermostat.service` and you're ready to go!

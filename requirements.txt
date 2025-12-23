@@ -1,0 +1,5 @@
+adafruit-blinka
+adafruit-circuitpython-tca9548a
+adafruit-circuitpython-hdc302x
+pytz
+

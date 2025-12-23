@@ -11,9 +11,10 @@ WorkingDirectory=/home/landon/Thermostat
 # Type of service: simple means the script runs directly
 Type=simple
 
-# The command to execute: python3 followed by the script name
-# Ensure this is the absolute path to python3
-ExecStart=/home/landon/Thermostat/venv/bin/python3 -u /home/landon/Thermostat/thermostat_control.py
+# The command to execute: uses start_thermostat.sh which automatically detects venv
+# The wrapper script will use venv/bin/python3 if it exists, otherwise system python3
+# IMPORTANT: Update this path to match your project directory
+ExecStart=/home/landon/Thermostat/start_thermostat.sh
 
 # Restart the service if it stops for any reason
 Restart=always
