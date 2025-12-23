@@ -13,7 +13,7 @@ Type=simple
 
 # The command to execute: python3 followed by the script name
 # Ensure this is the absolute path to python3
-ExecStart=/usr/bin/python3 -u thermostat_control.py
+ExecStart=/home/landon/Thermostat/venv/bin/python3 -u /home/landon/Thermostat/thermostat_control.py
 
 # Restart the service if it stops for any reason
 Restart=always

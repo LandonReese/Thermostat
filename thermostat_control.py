@@ -1,3 +1,4 @@
+import sys
 import json
 import subprocess
 from datetime import datetime, time
@@ -98,7 +99,7 @@ def fetch_sensor_data(data_collector_script_path):
     try:
         # Execute the collector script and capture its standard output
         result = subprocess.run(
-            ['python3', data_collector_script_path], 
+            [sys.executable, data_collector_script_path],
             capture_output=True, 
             text=True, 
             check=True
