@@ -1,162 +1,303 @@
-Raspberry Pi Zero W Smart Thermostat Project
+# Raspberry Pi Smart Thermostat
 
-This project implements a fully customizable, schedule-driven thermostat system using a Raspberry Pi Zero 2 W. It reads temperature and humidity data from an I2C sensor (via an I2C multiplexer), applies control logic based on a defined schedule and hysteresis, and determines the required action (e.g., HEAT_ON, COOL_OFF).
-Project Goal
+A fully customizable, schedule-driven thermostat system for Raspberry Pi that monitors temperature and humidity using I2C sensors and automatically controls HVAC systems based on time-of-day schedules.
 
-The primary goal is to provide a Python-based application that continuously monitors ambient conditions and automatically adjusts climate control based on a time-of-day schedule defined in schedule.py.
+## Overview
 
-Project File Structure
-File Name		Purpose
-thermostat_control.py	Main Application Logic. Contains the primary run_thermostat_cycle() loop, reads settings, checks the schedule, fetches sensor data, applies control logic, and determines the necessary HVAC action.
-schedule.py		Defines the daily temperature/mode schedule (time, target temperature, and mode).
-settings.json		Stores the current operational state and configuration (e.g., current_mode, hysteresis, timezone).
-data_collector.py	A wrapper script that calls sensor_reading.py and outputs the resulting sensor data as a JSON string to standard output (used for inter-process communication).
-sensor_reading.py	Hardware Interaction. Handles initialization of the I2C bus, the TCA9548A multiplexer, and the HDC302x sensor to read the current temperature and humidity.
+This project implements a thermostat control system that:
+- Reads temperature and humidity data from HDC302x sensors via I2C
+- Applies control logic based on customizable daily schedules
+- Uses hysteresis to prevent rapid cycling (short cycling)
+- Determines HVAC actions (HEAT_ON, HEAT_OFF, COOL_ON, COOL_OFF, FAN_ON, SYSTEM_OFF)
+- Runs continuously as a systemd service with automatic restart capabilities
 
-Prerequisites & Setup
-1. Hardware Requirements
+## Table of Contents
 
-    Raspberry Pi: Raspberry Pi Zero 2 W (or any other Raspberry Pi model).
+- [Hardware Requirements](#hardware-requirements)
+- [Project Structure](#project-structure)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Usage](#usage)
+- [System Service Setup](#system-service-setup)
+- [Customization](#customization)
+- [Troubleshooting](#troubleshooting)
 
-    Sensor: HDC302x Temperature/Humidity Sensor.
+## Hardware Requirements
 
-    I2C Multiplexer: TCA9548A (used in sensor_reading.py to communicate with the sensor on channel 0).
+- **Raspberry Pi**: Raspberry Pi Zero 2 W (or compatible model)
+- **Temperature/Humidity Sensor**: HDC302x
+- **I2C Multiplexer**: TCA9548A (sensor connected on channel 0)
+- **HVAC Interface**: Relay board or GPIO-controlled device
 
-    HVAC Interface: (To be added) A relay board or similar device connected to the Pi's GPIO pins to physically control the HEATING and COOLING systems.
+## Project Structure
 
-2. Software Dependencies
+| File | Purpose |
+|------|---------|
+| `thermostat_control.py` | Main application logic. Contains the control loop that reads settings, checks schedules, fetches sensor data, and determines HVAC actions. |
+| `schedule.py` | Defines the daily temperature/mode schedule (time, target temperature, mode). |
+| `settings.json` | Stores operational state and configuration (mode, hysteresis, timezone, etc.). |
+| `data_collector.py` | Wrapper script that calls `sensor_reading.py` and outputs JSON-formatted sensor data for inter-process communication. |
+| `sensor_reading.py` | Hardware interaction layer. Initializes I2C bus, TCA9548A multiplexer, and HDC302x sensor to read temperature and humidity. |
+| `start_thermostat.sh` | Startup wrapper script that automatically detects and uses a virtual environment if available. |
+| `thermostat.service` | Systemd service file for running the thermostat as a background service. |
 
-This project requires specific Python libraries, particularly for I2C communication and timezone handling.
+## Installation
+
+### 1. Enable I2C Interface
+
+Enable the I2C interface on your Raspberry Pi:
+
+```bash
+sudo raspi-config
+# Navigate to: 3 Interface Options → I5 I2C → Yes
+```
+
+### 2. Install Python Dependencies
 
 **Option A: Using a Virtual Environment (Recommended)**
 
-    # Navigate to your project directory
-    cd /path/to/Thermostat
-    
-    # Create a virtual environment
-    python3 -m venv venv
-    
-    # Activate the virtual environment
-    source venv/bin/activate
-    
-    # Install required libraries from requirements.txt
-    pip install -r requirements.txt
-
-**Option B: System-wide Installation**
-
-    # Ensure pip is up to date
-    sudo pip3 install --break-system-packages --upgrade pip
-    
-    # Install required libraries
-    sudo pip3 install --break-system-packages adafruit-blinka adafruit-circuitpython-tca9548a adafruit-circuitpython-hdc302x pytz
-
-**Note:** The systemd service will automatically use the virtual environment if it exists in the project directory. If no venv is found, it will use the system python3.
-
-Enable I2C: Ensure the I2C interface is enabled on your Raspberry Pi.
-Bash
-
-    sudo raspi-config
-
-    Navigate to 3 Interface Options → I5 I2C → Yes.
-
-3. Configuring the files for your RPi
-
-After cloning the repository, you need to update a few paths:
-
-    a. Update settings.json:
-       Edit the "project_path" setting to match your installation path:
-       "project_path": "/home/your_username/Thermostat"
-
-    b. Update thermostat.service:
-       Edit the following lines in thermostat.service:
-       - User=your_username (change 'landon' to your actual username)
-       - WorkingDirectory=/home/your_username/Thermostat (update the path)
-       - ExecStart=/home/your_username/Thermostat/start_thermostat.sh (update the path)
-
-    c. Make the startup script executable:
-       chmod +x start_thermostat.sh 
-
-Running the Thermostat
-
-The core of the system is thermostat_control.py, which is designed to be run continuously.
-1. Manually Starting the Control Loop
-
-The thermostat_control.py script is set up with an infinite loop and a 30-second sleep (time.sleep(30)) to cycle continuously.
-Bash
-
+```bash
 # Navigate to your project directory
 cd /path/to/Thermostat
 
-# Run the main control script
-python3 thermostat_control.py
+# Create a virtual environment
+python3 -m venv venv
 
-2. Customizing the Schedule
+# Activate the virtual environment
+source venv/bin/activate
 
-Edit the THERMOSTAT_SCHEDULE list in the schedule.py file. The control logic will automatically apply the setting corresponding to the last time entry that has passed.
-Key		Description					Example
-time		24-hour time to activate the setting.		'14:00' (2 PM)
-target_f	Desired Fahrenheit temperature setpoint.	68.0
-mode		System control mode.				'OFF', 'HEAT', 'COOL', 'FAN'
+# Install required libraries
+pip install -r requirements.txt
+```
 
-Current Default Schedule (from schedule.py):
+**Option B: System-wide Installation**
 
+```bash
+# Ensure pip is up to date
+sudo pip3 install --break-system-packages --upgrade pip
+
+# Install required libraries
+sudo pip3 install --break-system-packages -r requirements.txt
+```
+
+**Note:** The systemd service automatically uses the virtual environment if it exists in the project directory. Otherwise, it falls back to system `python3`.
+
+### 3. Configure Project Paths
+
+After cloning the repository, update the following files with your system-specific paths:
+
+**a. Update `settings.json`:**
+```json
+{
+    "project_path": "/home/your_username/Thermostat"
+}
+```
+
+**b. Update `thermostat.service`:**
+Edit the following lines:
+- `User=your_username` (replace `landon` with your username)
+- `WorkingDirectory=/home/your_username/Thermostat`
+- `ExecStart=/home/your_username/Thermostat/start_thermostat.sh`
+
+**c. Make the startup script executable:**
+```bash
+chmod +x start_thermostat.sh
+```
+
+## Configuration
+
+### Settings (`settings.json`)
+
+The `settings.json` file stores operational configuration:
+
+```json
+{
+    "current_mode": "HEAT",
+    "manual_target_f": 72.0,
+    "hysteresis": 1.5,
+    "timezone": "America/Chicago",
+    "last_check_time": "2025-12-02T06:47:20.535415",
+    "project_path": "/home/your_username/Thermostat"
+}
+```
+
+**Key Settings:**
+- **`hysteresis`**: Temperature band (in °F) around the target temperature to prevent rapid cycling
+  - HEAT ON triggers at `Target - Hysteresis`
+  - COOL ON triggers at `Target + Hysteresis`
+- **`timezone`**: Critical for correct schedule timing. Use IANA timezone names (e.g., `"America/New_York"`, `"America/Chicago"`, `"Europe/London"`)
+
+### Schedule (`schedule.py`)
+
+Edit the `THERMOSTAT_SCHEDULE` list in `schedule.py` to define your daily temperature schedule. The control logic automatically applies the setting corresponding to the most recent time entry that has passed.
+
+**Schedule Entry Format:**
+| Key | Description | Example |
+|-----|-------------|---------|
+| `time` | 24-hour time to activate the setting | `'14:00'` (2 PM) |
+| `target_f` | Desired Fahrenheit temperature setpoint | `68.0` |
+| `mode` | System control mode | `'OFF'`, `'HEAT'`, `'COOL'`, `'FAN'` |
+
+**Example Schedule:**
+```python
 THERMOSTAT_SCHEDULE = [
     {'time': '06:00', 'target_f': 72.0, 'mode': 'HEAT'},
     {'time': '08:00', 'target_f': 65.0, 'mode': 'OFF'},
     {'time': '17:00', 'target_f': 70.0, 'mode': 'COOL'},
     {'time': '22:00', 'target_f': 68.0, 'mode': 'COOL'},
 ]
+```
 
-3. Customizing Initial Settings
+## Usage
 
-You can change the operational parameters in settings.json.
+### Manual Execution
 
-    hysteresis: The temperature band (in °F) around the target temperature used to prevent rapid cycling (short cycling).
+Run the thermostat control script directly:
 
-        HEAT ON is triggered at Target - Hysteresis.
+```bash
+# Navigate to your project directory
+cd /path/to/Thermostat
 
-        COOL ON is triggered at Target + Hysteresis.
+# Activate virtual environment (if using one)
+source venv/bin/activate
 
-    timezone: Critical for correct schedule timing. Set this to your local timezone (e.g., "America/New_York").
+# Run the main control script
+python3 thermostat_control.py
+```
 
-Current Default Settings (from settings.json):
-JSON
+The script runs continuously, checking sensor data and applying control logic every 30 seconds.
 
-{
-    "current_mode": "HEAT",
-    "manual_target_f": 72.0,
-    "hysteresis": 1.5,
-    "timezone": "America/Chicago",
-    "last_check_time": "2025-12-02T06:47:20.535415"
-}
+### Testing Sensor Reading
 
-## System Service & Automation
+Test the sensor hardware independently:
 
-To ensure the thermostat runs continuously and restarts automatically if the Raspberry Pi reboots or the script crashes, we use a **systemd service**. The service file is included in this repository (`thermostat.service`).
+```bash
+python3 sensor_reading.py
+```
 
-### 1. Setup and Symlink the Service File
+This will output a snapshot of current temperature and humidity readings.
 
-**Important:** Before linking the service file, ensure you have:
-1. Updated the paths in `thermostat.service` (User, WorkingDirectory, ExecStart)
+## System Service Setup
+
+To run the thermostat as a background service that starts automatically on boot:
+
+### 1. Setup Systemd Service
+
+**Important:** Before proceeding, ensure you have:
+1. Updated paths in `thermostat.service` (User, WorkingDirectory, ExecStart)
 2. Made `start_thermostat.sh` executable: `chmod +x start_thermostat.sh`
 3. (Optional) Created and activated a virtual environment with dependencies installed
 
-Create a symbolic link from this repository to the systemd directory. This allows you to update the service configuration by simply editing the file in this folder.
+Create a symbolic link to enable the service:
 
-    # Link the file to /etc/systemd/system/
-    # Syntax: sudo ln -s [ABSOLUTE_PATH_TO_REPO_FILE] [DESTINATION]
-    sudo ln -s /home/your_username/Thermostat/thermostat.service /etc/systemd/system/thermostat.service
-    
-    # Reload systemd to recognize the new service
-    sudo systemctl daemon-reload
-    
-    # Enable the service to start on boot
-    sudo systemctl enable thermostat.service
-    
-    # Start the service
-    sudo systemctl start thermostat.service
-    
-    # Check the status
-    sudo systemctl status thermostat.service
+```bash
+# Link the service file to systemd directory
+sudo ln -s /home/your_username/Thermostat/thermostat.service /etc/systemd/system/thermostat.service
 
-**How it works:** The `start_thermostat.sh` wrapper script automatically detects if a virtual environment exists in the project directory. If `venv/bin/python3` is found, it uses that. Otherwise, it falls back to the system `python3`. This means you can use the project with or without a virtual environment - just update the paths in `thermostat.service` and you're ready to go!
+# Reload systemd to recognize the new service
+sudo systemctl daemon-reload
+
+# Enable the service to start on boot
+sudo systemctl enable thermostat.service
+
+# Start the service
+sudo systemctl start thermostat.service
+
+# Check the service status
+sudo systemctl status thermostat.service
+```
+
+### 2. Service Management
+
+**View logs:**
+```bash
+sudo journalctl -u thermostat.service -f
+```
+
+**Stop the service:**
+```bash
+sudo systemctl stop thermostat.service
+```
+
+**Restart the service:**
+```bash
+sudo systemctl restart thermostat.service
+```
+
+**Disable auto-start on boot:**
+```bash
+sudo systemctl disable thermostat.service
+```
+
+**How it works:** The `start_thermostat.sh` wrapper script automatically detects if a virtual environment exists in the project directory. If `venv/bin/python3` is found, it uses that. Otherwise, it falls back to system `python3`.
+
+## Customization
+
+### Adding New Schedule Entries
+
+Add entries to `THERMOSTAT_SCHEDULE` in `schedule.py`. Entries are automatically sorted by time, and the most recent passed time entry becomes active.
+
+### Adjusting Hysteresis
+
+Modify the `hysteresis` value in `settings.json` to change the temperature band:
+- **Lower values** (e.g., 0.5°F): More frequent cycling, tighter temperature control
+- **Higher values** (e.g., 2.0°F): Less frequent cycling, wider temperature range
+
+### Changing Timezone
+
+Update the `timezone` field in `settings.json` with your IANA timezone name. Common examples:
+- `"America/New_York"` (Eastern Time)
+- `"America/Chicago"` (Central Time)
+- `"America/Denver"` (Mountain Time)
+- `"America/Los_Angeles"` (Pacific Time)
+- `"Europe/London"` (UK Time)
+
+## Troubleshooting
+
+### Sensor Reading Failures
+
+**Problem:** `CRITICAL: Failed to get valid sensor data`
+
+**Solutions:**
+1. Verify I2C is enabled: `sudo raspi-config` → Interface Options → I2C
+2. Check I2C device detection: `i2cdetect -y 1`
+3. Verify sensor connections and I2C address
+4. Test sensor directly: `python3 sensor_reading.py`
+
+### Service Won't Start
+
+**Problem:** Service fails to start or crashes immediately
+
+**Solutions:**
+1. Check service status: `sudo systemctl status thermostat.service`
+2. View logs: `sudo journalctl -u thermostat.service -n 50`
+3. Verify all paths in `thermostat.service` are correct
+4. Ensure `start_thermostat.sh` is executable: `chmod +x start_thermostat.sh`
+5. Test manual execution: `./start_thermostat.sh`
+
+### Timezone Issues
+
+**Problem:** Schedule times don't match expected times
+
+**Solutions:**
+1. Verify timezone in `settings.json` uses IANA format
+2. Check system timezone: `timedatectl`
+3. Ensure Raspberry Pi has correct system time (consider using NTP)
+
+### Import Errors
+
+**Problem:** `ModuleNotFoundError` when running scripts
+
+**Solutions:**
+1. Verify dependencies are installed: `pip list`
+2. If using venv, ensure it's activated: `source venv/bin/activate`
+3. Reinstall requirements: `pip install -r requirements.txt`
+
+### Permission Errors
+
+**Problem:** Permission denied errors when accessing files
+
+**Solutions:**
+1. Verify file ownership: `ls -l`
+2. Ensure service user matches file owner
+3. Check `settings.json` permissions are readable
