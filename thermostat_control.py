@@ -7,18 +7,13 @@ import time
 import pytz 
 import os 
 
-# --- Configuration Constants ---
-# Used as fallback if settings.json is missing or lacks the 'project_path'
 PROJECT_PATH_DEFAULT = '/home/landon/Thermostat'
 SETTINGS_FILE_NAME = 'settings.json'
 DATA_COLLECTOR_SCRIPT_NAME = 'data_collector.py'
 
-# --- Helper Functions ---
 
 def get_current_setpoint(schedule, default_target, timezone_name):
-    """
-    Determines the target temperature and mode based on the current time and the schedule.
-    """
+    """Determines the target temperature and mode based on the current time and the schedule."""
     try:
         tz = pytz.timezone(timezone_name)
         current_time = datetime.now(tz).time() 
@@ -28,17 +23,14 @@ def get_current_setpoint(schedule, default_target, timezone_name):
         
     sorted_schedule = sorted(schedule, key=lambda x: datetime.strptime(x['time'], '%H:%M').time())
     
-    # Initialize active_setting with the last event to cover the period until the first event of the next day.
     if sorted_schedule:
         active_setting = {
             'target_f': sorted_schedule[-1]['target_f'],
             'mode': sorted_schedule[-1]['mode']
         }
     else:
-        # Fallback to manual default if schedule is empty
         active_setting = {'target_f': default_target, 'mode': 'OFF'} 
     
-    # Loop through the schedule to find the latest time entry that has passed today
     for entry in sorted_schedule:
         set_time = datetime.strptime(entry['time'], '%H:%M').time()
         
@@ -46,7 +38,6 @@ def get_current_setpoint(schedule, default_target, timezone_name):
             active_setting['target_f'] = entry['target_f']
             active_setting['mode'] = entry['mode']
         else:
-            # Since the list is sorted, we can stop checking once we hit a future time
             break
             
     return active_setting
@@ -59,17 +50,13 @@ def read_settings():
         with open(settings_file_path, 'r') as f:
             settings = json.load(f)
 
-        # Use 'project_path' from settings or fall back to default
         project_path = settings.get('project_path', PROJECT_PATH_DEFAULT)
-        
-        # Store absolute paths in the dictionary for use in other functions
         settings['SETTINGS_FILE'] = settings_file_path
         settings['DATA_COLLECTOR_SCRIPT'] = os.path.join(project_path, DATA_COLLECTOR_SCRIPT_NAME)
 
         return settings
     except FileNotFoundError:
         print(f"Error: Could not find '{SETTINGS_FILE_NAME}' in script directory.")
-        # Return sensible defaults if file is missing
         return {
             "current_mode": "HEAT",
             "manual_target_f": 72.0,
@@ -87,8 +74,6 @@ def read_settings():
 def write_settings(settings):
     """Writes the updated configuration back to the JSON file."""
     settings_file_path = settings['SETTINGS_FILE'] 
-    
-    # Remove the dynamically added path keys before writing back to the simplified settings.json
     settings_to_write = {k: v for k, v in settings.items() if k not in ['SETTINGS_FILE', 'DATA_COLLECTOR_SCRIPT']}
     
     with open(settings_file_path, 'w') as f:
@@ -97,14 +82,12 @@ def write_settings(settings):
 def fetch_sensor_data(data_collector_script_path):
     """Runs the data_collector script and parses its JSON output."""
     try:
-        # Execute the collector script and capture its standard output
         result = subprocess.run(
             [sys.executable, data_collector_script_path],
             capture_output=True, 
             text=True, 
             check=True
         )
-        # The output of data_collector.py is a JSON string
         return json.loads(result.stdout)
     except subprocess.CalledProcessError as e:
         print(f"Error running data collector: {e.stderr}")
@@ -113,12 +96,9 @@ def fetch_sensor_data(data_collector_script_path):
         print("Error: Collector script returned invalid JSON.")
         return None
 
-# --- Main Logic ---
-
 def run_thermostat_cycle():
     """Performs one cycle of reading sensors, applying logic, and making a decision."""
     
-    # 1. READ SETTINGS & DETERMINE TARGET
     current_settings = read_settings()
     if not current_settings:
         return
@@ -146,7 +126,6 @@ def run_thermostat_cycle():
     
     print(f"- Schedule Target: {target_f:.1f}°F, Mode: {mode}")
     
-    # 2. READ SENSORS
     sensor_data = fetch_sensor_data(current_settings['DATA_COLLECTOR_SCRIPT'])
     if not sensor_data or sensor_data.get('status') == 'ERROR' or sensor_data['temperature_f'] is None:
         print("CRITICAL: Failed to get valid sensor data. Aborting cycle.")
@@ -157,7 +136,6 @@ def run_thermostat_cycle():
     
     print(f"- Current Reading: {current_temp:.1f}°F, {current_humidity:.1f}% RH")
     
-    # 3. CONTROL LOGIC
     action = "NO_CHANGE"
     
     if mode == 'HEAT':
@@ -182,20 +160,14 @@ def run_thermostat_cycle():
     elif mode == 'OFF':
         action = "SYSTEM_OFF"
         
-    # 4. EXECUTE ACTION
     print(f"\n- DECISION: {action}")
     
-    # NOTE: This is where you would call a function to control GPIO pins
-    
-    # 5. UPDATE SETTINGS (to log the last check time)
     current_settings['last_check_time'] = datetime.now().isoformat()
     write_settings(current_settings)
     print("--- Cycle Complete ---")
 
 
 if __name__ == "__main__":
-    
-    # Run continuously every 30 seconds
     while True:
         run_thermostat_cycle()
         time.sleep(30)
